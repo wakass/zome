@@ -4,25 +4,21 @@
 //  Author: MrFuzzy_F, 
 //  License: CC BY-NC
 //
+include <chamfer_box.scad>;
 
 $fa=1*1;
 $fs=0.25*1;
 eps  = 0.01; //numerical precision, openscad
-tol  = 0.4;  //process tolerance (3d printing)
+tol  = 0.3;  //process tolerance (3d printing) (0.2mm very tight, 0.3mm slightly looser)
 
 // workpiece fixing angle, default: 90 degrees [30:180]
-//C1
+//example: C1
 holder_angle = 75.944;
 // Uncomment to get C2
-holder_angle = 180.0 - 75.944;
+//holder_angle = 180.0 - 75.944;
 
-//E1
-holder_angle = 99.0;
-//Uncomment to get E2
-holder_angle = 180.0 - 99.0; 
 
 holder_thickness = 45;
-
 
 /* [Screw hole guides] */
 distance_screw = 22.0; // Distance between holes, holes are centered vertically
@@ -31,6 +27,7 @@ offset_screw = 11.0; // Normal distance from edge
 /* [Screw hole guide insert?] */
 insert_thickness = 2.0; // thickness
 insert_cutout_length = 20; //length along arm
+insert_cutout_chamfer = 2.0;
 
 access_cutout_length = 20; //length along arm, access cutout has no thickness since it goes through
 access_cutout_offset = eps; //offset
@@ -96,7 +93,7 @@ module print(item=0) {
   if (item==2) outer_holder_insert();
 }
 
-item = 1;
+item = 2;
 print(item);
 
 
@@ -172,13 +169,17 @@ module outer_holder_base(angle_l, angle_r, l_arm) {
             cylinder(holder_thickness+0.02, d=p2_corner_cutout_diameter);
     }
 }
-
-module outer_holder_insert_cutout(tol=0.0) {
+/// We use a chamfered version of a box, unfortunately due to the method of intersection, some of the chamfer (front and back) gets lost. This is likely unavoidable in openSCAD without more effort.
+module outer_holder_insert_cutout(tol=0.0, chamfer_amount=eps) {
        /// Cutout
         translate([access_cutout_offset*cos(angle_l), access_cutout_offset*sin(angle_l), holder_thickness/2 - access_cutout_height/2])
             rotate(a=angle_r,v=[0,0,1])
                     translate([-p2_clamp_corner_offset*2,0,0])
-                        cube([p2_clamp_corner_offset*4,access_cutout_length + tol, access_cutout_height+tol]);
+                        chamfer_box(p2_clamp_corner_offset*4, 
+                                    access_cutout_height+tol,
+                                    access_cutout_length + tol,
+                                    chamfer_amount=chamfer_amount);
+//                        cube([p2_clamp_corner_offset*4,access_cutout_length + tol, access_cutout_height+tol]);
 
 }
 
@@ -186,7 +187,7 @@ module main_outer_holder() {
     
     difference() {
         outer_holder_base(angle_l,angle_r, p2_arm_length_on_workpiece);    
-        outer_holder_insert_cutout(tol/2.0);
+        outer_holder_insert_cutout(tol/2.0,eps);
     }  
             
 }
@@ -196,7 +197,7 @@ module outer_holder_insert() {
     difference() {
     intersection() {
         outer_holder_base(angle_l,angle_r, p2_arm_length_on_workpiece);    
-        outer_holder_insert_cutout(-tol/2.0);
+        outer_holder_insert_cutout(-tol/2.0, insert_cutout_chamfer);
     }  
     
     /// Screw holes

@@ -13,7 +13,7 @@ for j in {1..3}; do
             $OPENSCAD \
                 -D item=$i \
                 -D holder_angle=$HOLDER_ANGLE \
-                -o "./HolderExport/${name}${j}_${i}.stl" \
+                -o "../HolderExport/${name}${j}_${i}.stl" \
                 ./CornerHolder.scad
         done
 done
